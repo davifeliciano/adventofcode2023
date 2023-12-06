@@ -1,5 +1,5 @@
 use day_01::add_over_lines;
-use std::{cmp::Ordering, num::NonZeroUsize, thread};
+use std::{num::NonZeroUsize, thread};
 
 const DIGITS_NAMES: [(&str, char); 10] = [
     ("zero", '0'),
@@ -21,7 +21,7 @@ fn get_first_converted_digit(input: &str) -> Option<char> {
         }
 
         for (digit_name, digit_char) in DIGITS_NAMES {
-            let upper = (i + digit_name.len()).min(input.len() - 1);
+            let upper = (i + digit_name.len()).min(input.len());
             if digit_name == &input[i..upper] {
                 return Some(digit_char);
             }
@@ -38,9 +38,10 @@ fn get_last_converted_digit(input: &str) -> Option<char> {
         }
 
         for (digit_name, digit_char) in DIGITS_NAMES {
-            let lower: usize = match digit_name.len().cmp(&i) {
-                Ordering::Greater => continue,
-                _ => i - digit_name.len() + 1,
+            let lower: usize = if digit_name.len() > i + 1 {
+                continue;
+            } else {
+                i + 1 - digit_name.len()
             };
 
             if digit_name == &input[lower..=i] {
@@ -81,11 +82,9 @@ mod tests {
     fn test_get_first_converted_digit() {
         assert_eq!(get_first_converted_digit("asdfasdfasdf"), None);
         assert_eq!(get_first_converted_digit("two1nine"), Some('2'));
-        assert_eq!(get_first_converted_digit("eightwothree"), Some('8'));
-        assert_eq!(get_first_converted_digit("abcone2threexyz"), Some('1'));
-        assert_eq!(get_first_converted_digit("xtwone3four"), Some('2'));
-        assert_eq!(get_first_converted_digit("4nineeightseven2"), Some('4'));
-        assert_eq!(get_last_converted_digit("zoneightwone"), Some('1'));
+        assert_eq!(get_first_converted_digit("asdf1nine"), Some('1'));
+        assert_eq!(get_first_converted_digit("asdfour"), Some('4'));
+        assert_eq!(get_first_converted_digit("asdf5"), Some('5'));
         assert_eq!(get_first_converted_digit("7pqrstsixteen"), Some('7'));
     }
 
@@ -93,12 +92,10 @@ mod tests {
     fn test_get_last_converted_digit() {
         assert_eq!(get_last_converted_digit("asdfasdfasdf"), None);
         assert_eq!(get_last_converted_digit("two1nine"), Some('9'));
-        assert_eq!(get_last_converted_digit("eightwothree"), Some('3'));
-        assert_eq!(get_last_converted_digit("abcone2threexyz"), Some('3'));
-        assert_eq!(get_last_converted_digit("xtwone3four"), Some('4'));
-        assert_eq!(get_last_converted_digit("4nineeightseven2"), Some('2'));
-        assert_eq!(get_last_converted_digit("zoneightwone"), Some('1'));
-        assert_eq!(get_last_converted_digit("7pqrstsixteen"), Some('6'));
+        assert_eq!(get_last_converted_digit("two1asdf"), Some('1'));
+        assert_eq!(get_last_converted_digit("nineteen"), Some('9'));
+        assert_eq!(get_last_converted_digit("5asdf"), Some('5'));
+        assert_eq!(get_last_converted_digit("asdf5"), Some('5'));
     }
 
     #[test]
@@ -106,16 +103,11 @@ mod tests {
         assert_eq!(concat_first_and_last_converted_digits("asdfasdfasdf"), 0);
         assert_eq!(concat_first_and_last_converted_digits("two1nine"), 29);
         assert_eq!(concat_first_and_last_converted_digits("eightwothree"), 83);
-        assert_eq!(
-            concat_first_and_last_converted_digits("abcone2threexyz"),
-            13
-        );
-        assert_eq!(concat_first_and_last_converted_digits("xtwone3four"), 24);
-        assert_eq!(
-            concat_first_and_last_converted_digits("4nineeightseven2"),
-            42
-        );
-        assert_eq!(concat_first_and_last_converted_digits("zoneightwone"), 11);
+        assert_eq!(concat_first_and_last_converted_digits("abone2threeyz"), 13);
+        assert_eq!(concat_first_and_last_converted_digits("4asdfasdfasdf"), 44);
+        assert_eq!(concat_first_and_last_converted_digits("asdfasdfasdf1"), 11);
+        assert_eq!(concat_first_and_last_converted_digits("twoasdfasdf"), 22);
+        assert_eq!(concat_first_and_last_converted_digits("asdfasdftwo"), 22);
         assert_eq!(concat_first_and_last_converted_digits("7pqrstsixteen"), 76);
     }
 }
