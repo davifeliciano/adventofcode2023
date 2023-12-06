@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["day-*"]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Davi Feliciano <dfeliciano37@gmail.com>"]
+description = "Solutions to the puzzles of Advent Of Code 2023"
+
+[workspace.dependencies]
