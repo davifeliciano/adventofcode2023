@@ -8,3 +8,4 @@ authors = ["Davi Feliciano <dfeliciano37@gmail.com>"]
 description = "Solutions to the puzzles of Advent Of Code 2023"
 
 [workspace.dependencies]
+regex = "1.10.2"
