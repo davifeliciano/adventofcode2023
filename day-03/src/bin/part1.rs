@@ -7,9 +7,10 @@ fn main() -> Result<(), BuildError> {
     let part_numbers_sum: u32 = schematic
         .part_numbers()
         .iter()
-        .map(|&s| {
-            s.parse::<u32>()
-                .expect("error parsing u32 from part number")
+        .map(|n| {
+            n.content()
+                .parse::<u32>()
+                .expect("error parsing u32 from PartNumber contents")
         })
         .sum();
 
