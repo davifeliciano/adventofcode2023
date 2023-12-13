@@ -8,7 +8,7 @@ fn main() -> Result<(), ParseError> {
         .unwrap_or(NonZeroUsize::new(2).unwrap())
         .into();
 
-    let result = CardCollection::from_lines(&lines, workers_count)?.total_points();
+    let result = CardCollection::from_lines(&lines, workers_count)?.total_copies();
 
     println!("Result: {}", result);
 

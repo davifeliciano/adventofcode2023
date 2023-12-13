@@ -15,6 +15,7 @@ pub struct Card {
     pub id: usize,
     pub winning_numbers: HashSet<u32>,
     pub numbers: HashSet<u32>,
+    copies: usize,
 }
 
 impl FromStr for Card {
@@ -43,6 +44,7 @@ impl FromStr for Card {
             id,
             winning_numbers,
             numbers,
+            copies: 1,
         })
     }
 }
@@ -75,11 +77,61 @@ impl Card {
             2u32.pow(self.hits_count() as u32 - 1)
         }
     }
+
+    pub fn copies(&self) -> usize {
+        self.copies
+    }
+
+    pub fn copy(&mut self) {
+        self.copies += 1
+    }
 }
 
-pub fn cards_from_lines(lines: &[&str], worker_count: usize) -> Result<Vec<Card>, ParseError> {
+pub struct CardCollection {
+    cards: Vec<Card>,
+}
+
+impl CardCollection {
+    pub fn from_lines(lines: &[&str], workers_count: usize) -> Result<CardCollection, ParseError> {
+        let cards = cards_from_lines(lines, workers_count)?;
+        Ok(CardCollection { cards }.increment_copies())
+    }
+
+    fn increment_copies(mut self) -> Self {
+        let cards_count = self.cards.len();
+
+        for i in 0..cards_count - 1 {
+            let card = &self.cards[i];
+            let hits_count = card.hits_count();
+            let start = cards_count.min(i + 1);
+            let end = cards_count.min(start + hits_count);
+
+            for _ in 0..card.copies() {
+                for card in &mut self.cards[start..end] {
+                    card.copy();
+                }
+            }
+        }
+
+        self
+    }
+
+    pub fn cards(&self) -> &Vec<Card> {
+        &self.cards
+    }
+
+    pub fn total_points(&self) -> u32 {
+        self.cards.iter().map(|c| c.points()).sum()
+    }
+
+    pub fn total_copies(&self) -> usize {
+        self.cards.iter().map(|c| c.copies()).sum()
+    }
+}
+
+fn cards_from_lines(lines: &[&str], workers_count: usize) -> Result<Vec<Card>, ParseError> {
     thread::scope(|s| {
-        let chunks = lines.chunks(lines.len() / worker_count + 1);
+        let chunks = lines.chunks(lines.len() / workers_count + 1);
         let mut handles = vec![];
         let mut cards = vec![];
 
@@ -116,12 +168,34 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"
             .lines()
             .collect();
 
-        let points: Vec<u32> = cards_from_lines(&lines, 2)
+        let points: Vec<u32> = CardCollection::from_lines(&lines, 2)
             .unwrap()
+            .cards()
             .iter()
             .map(|c| c.points())
             .collect();
 
         assert_eq!(points, vec![8, 2, 2, 1, 0, 0])
+    }
+
+    #[test]
+    fn test_copies() {
+        let lines: Vec<_> = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
+Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
+Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
+Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"
+            .lines()
+            .collect();
+
+        let copies: Vec<usize> = CardCollection::from_lines(&lines, 2)
+            .unwrap()
+            .cards()
+            .iter()
+            .map(|c| c.copies())
+            .collect();
+
+        assert_eq!(copies, vec![1, 2, 4, 8, 14, 1])
     }
 }
