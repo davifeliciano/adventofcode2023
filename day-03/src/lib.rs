@@ -1,4 +1,4 @@
-use regex::{Match, Matches, Regex};
+use regex::{Match, Regex};
 use std::{error::Error, fmt::Display};
 
 #[derive(Debug)]
@@ -50,7 +50,7 @@ impl<'a> PartNumber<'a> {
 #[derive(Debug)]
 pub struct EngineSchematic<'a> {
     lines: Vec<&'a str>,
-    part_numbers: Vec<PartNumber<'a>>,
+    part_numbers: Vec<Vec<PartNumber<'a>>>,
 }
 
 impl<'a> EngineSchematic<'a> {
@@ -76,7 +76,7 @@ impl<'a> EngineSchematic<'a> {
         Ok(schematic)
     }
 
-    pub fn part_numbers(&self) -> &Vec<PartNumber> {
+    pub fn part_numbers(&self) -> &Vec<Vec<PartNumber<'_>>> {
         &self.part_numbers
     }
 
@@ -93,10 +93,6 @@ impl<'a> EngineSchematic<'a> {
         }
 
         Ok(content.lines().collect())
-    }
-
-    fn find_candidates_in_line<'r>(part_number_regex: &'r Regex, line: &'a str) -> Matches<'r, 'a> {
-        part_number_regex.find_iter(line)
     }
 
     fn get_match_boundary(&self, num_match: Match<'_>, line_index: usize) -> (usize, usize) {
@@ -164,14 +160,15 @@ impl<'a> EngineSchematic<'a> {
 
     fn set_part_numbers(&mut self, part_number_regex: &Regex, symbol_regex: &Regex) {
         for line_index in 0..self.lines.len() {
-            for num_match in
-                Self::find_candidates_in_line(part_number_regex, self.lines[line_index])
-            {
+            let mut line_part_numbers = vec![];
+
+            for num_match in part_number_regex.find_iter(self.lines[line_index]) {
                 if self.match_is_part_number(symbol_regex, num_match, line_index) {
-                    self.part_numbers
-                        .push(PartNumber::from_match(num_match, line_index))
+                    line_part_numbers.push(PartNumber::from_match(num_match, line_index))
                 }
             }
+
+            self.part_numbers.push(line_part_numbers)
         }
     }
 }
@@ -192,11 +189,12 @@ mod tests {
             schematic
                 .part_numbers()
                 .iter()
-                .map(|n| n.content)
+                .map(|v| v.iter().map(|n| n.content()).collect::<Vec<_>>())
                 .collect::<Vec<_>>(),
             vec![
-                "784", "578", "802", "177", "369", "939", "524", "90", "76", "615", "961", "951",
-                "736", "955", "253", "776", "600"
+                vec!["784", "578", "802", "177", "369"],
+                vec!["939", "524", "90", "76", "615", "961"],
+                vec!["951", "736", "955", "253", "776", "600"]
             ]
         );
     }

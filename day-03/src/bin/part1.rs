@@ -7,6 +7,7 @@ fn main() -> Result<(), BuildError> {
     let part_numbers_sum: u32 = schematic
         .part_numbers()
         .iter()
+        .flatten()
         .map(|n| {
             n.content()
                 .parse::<u32>()
